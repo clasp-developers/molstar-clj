@@ -60,7 +60,7 @@ export class ViewerView extends DOMWidgetView {
   async render() {
     super.render();
     this.displayed.then(() => {
-      this.el.classList.add('molstar-stage');
+      this.el.classList.add('molstar-viewer');
       this.el.classList.add('jupyter-widgets');
       this.el.setAttribute('data-jp-suppress-context-menu', '');
 
@@ -68,8 +68,8 @@ export class ViewerView extends DOMWidgetView {
       this.el.appendChild(this.viewer_container);
 
       molstar.Viewer.create(this.viewer_container, {
-        layoutIsExpanded: true,
-        layoutShowControls: false,
+        layoutIsExpanded: false,
+        layoutShowControls: true,
         layoutShowRemoteState: false,
         layoutShowSequence: true,
         layoutShowLog: false,
@@ -91,10 +91,11 @@ export class ViewerView extends DOMWidgetView {
 
   processLuminoMessage(msg: any): void {
     super.processLuminoMessage(msg);
-    /*if ((msg.type === 'resize' || msg.type === 'after-show') && this.viewer_obj) {
-      const box = this.el.getBoundingClientRect();
-      this.viewer_obj.setSize(Math.floor(box.width) + 'px', Math.floor(box.height) + 'px');
-      }*/
+    if ((msg.type === 'resize' || msg.type === 'after-show') && this.viewer_obj) {
+      this.viewer_obj.handleResize();
+      //const box = this.el.getBoundingClientRect();
+      //this.viewer_obj.setSize(Math.floor(box.width) + 'px', Math.floor(box.height) + 'px');
+    }
   }
 
   create_molstar_child_view(model: any) {

@@ -1,4 +1,4 @@
-/*.jupyter-widgets.molstar-viewer {
+.jupyter-widgets.molstar-viewer {
   height: 480px;
   width: 100%;
   position: relative;
@@ -6,9 +6,8 @@
   flex: 1 1 auto;
 }
 
-.jupyter-widgets.molstar-viewer > div {
+/*.jupyter-widgets.molstar-viewer > div {
   position: absolute !important;
   x: 0;
   y: 0;
-}
-*/
+}*/

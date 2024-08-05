@@ -1,3 +1,4 @@
+import '../css/light.css';
 
 import { ANVILMembraneOrientation } from 'molstar/lib/extensions/anvil/behavior';
 import { Backgrounds } from 'molstar/lib/extensions/backgrounds';
