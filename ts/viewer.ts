@@ -14,7 +14,7 @@ import { MODULE_NAME, MODULE_VERSION } from './version';
 // Import the CSS
 import '../css/widget.css';
 
-import * as molstar from 'molstar/lib/apps/viewer';
+import * as molstar from './base-viewer';
 import { ViewSet } from './utils';
 
 export class ViewerModel extends DOMWidgetModel {
