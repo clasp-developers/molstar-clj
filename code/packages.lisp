@@ -1,3 +1,11 @@
 (defpackage #:molstar
   (:use :common-lisp)
-  (:export))
+  (:shadow #:log)
+  (:export #:layout/show-controls
+           #:load-pdb
+           #:load-structure-from-data
+           #:log/message
+           #:log/info
+           #:log/warn
+           #:log/error
+           #:viewer))

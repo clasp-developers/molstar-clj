@@ -22,6 +22,8 @@ export class ViewerModel extends DOMWidgetModel {
     return {
       ...super.defaults(),
 
+      layout$show_controls: true,
+
       _model_name: 'ViewerModel',
       _model_module: MODULE_NAME,
       _model_module_version: MODULE_VERSION,
@@ -55,6 +57,7 @@ export class ViewerView extends DOMWidgetView {
       this.remove_molstar_child_view,
       this
     );
+    this.model.on('msg:custom', this.handle_custom_message.bind(this));
   }
 
   async render() {
@@ -69,10 +72,10 @@ export class ViewerView extends DOMWidgetView {
 
       molstar.Viewer.create(this.viewer_container, {
         layoutIsExpanded: false,
-        layoutShowControls: true,
+        layoutShowControls: this.model.get('layout$show_controls'),
         layoutShowRemoteState: false,
         layoutShowSequence: true,
-        layoutShowLog: false,
+        layoutShowLog: true,
         layoutShowLeftPanel: true,
 
         viewportShowExpand: true,
@@ -83,8 +86,13 @@ export class ViewerView extends DOMWidgetView {
         emdbProvider: 'rcsb',
       }).then(viewer => {
         this.viewer_obj = viewer;
-        viewer.loadPdb('7bv2');
-        viewer.loadEmdb('EMD-30210', { detail: 6 });
+        this.viewer_obj.plugin.layout.events.updated.subscribe(() => {
+          this.model.set('layout$show_controls', this.viewer_obj.plugin.layout.state.showControls);
+          this.model.save_changes();
+        });
+        this.model.on('change:layout$show_controls', () => {
+          this.viewer_obj.setOptions({ layoutShowControls: this.model.get('layout$show_controls') });
+        });
       });
     });
   }
@@ -93,8 +101,39 @@ export class ViewerView extends DOMWidgetView {
     super.processLuminoMessage(msg);
     if ((msg.type === 'resize' || msg.type === 'after-show') && this.viewer_obj) {
       this.viewer_obj.handleResize();
-      //const box = this.el.getBoundingClientRect();
-      //this.viewer_obj.setSize(Math.floor(box.width) + 'px', Math.floor(box.height) + 'px');
+    }
+  }
+
+  handle_log_message(content: any): void {
+    switch (content.level) {
+      case 'info':
+        this.viewer_obj.plugin.log.info(content.text);
+        break;
+      case 'warn':
+        this.viewer_obj.plugin.log.warn(content.text);
+        break;
+      case 'error':
+        this.viewer_obj.plugin.log.error(content.text);
+        break;
+      default:
+        this.viewer_obj.plugin.log.message(content.text);
+        break;
+    }
+  }
+
+  handle_custom_message(content: any): void {
+    if (this.viewer_obj) {
+      switch (content.do) {
+        case 'log':
+          this.handle_log_message(content);
+          break;
+        case 'load_pdb':
+          this.viewer_obj.loadPdb(content.pdb, content.options);
+          break;
+        case 'load_structure_from_data':
+          this.viewer_obj.loadStructureFromData(content.data, content.format, content.options);
+          break;
+      }
     }
   }
 
