@@ -80,7 +80,8 @@ export class ViewerView extends DOMWidgetView {
 
         viewportShowExpand: true,
         viewportShowSelectionMode: false,
-        viewportShowAnimation: false,
+        viewportShowAnimation: true,
+        viewportShowTrajectoryControls: true,
 
         pdbProvider: 'rcsb',
         emdbProvider: 'rcsb',
@@ -121,7 +122,7 @@ export class ViewerView extends DOMWidgetView {
     }
   }
 
-  handle_custom_message(content: any): void {
+  handle_custom_message(content: any, buffers: DataView[]): void {
     if (this.viewer_obj) {
       switch (content.do) {
         case 'log':
@@ -132,6 +133,17 @@ export class ViewerView extends DOMWidgetView {
           break;
         case 'load_structure_from_data':
           this.viewer_obj.loadStructureFromData(content.data, content.format, content.options);
+          break;
+        case 'load_trajectory':
+          if (Number.isInteger(content.params.model.data))
+            content.params.model.data = content.params.model.isBinary
+                ? buffers[content.params.model.data].buffer
+                : new TextDecoder().decode(buffers[content.params.model.data].buffer);
+          if (Number.isInteger(content.params.coordinates.data))
+            content.params.coordinates.data = content.params.coordinates.isBinary
+                ? buffers[content.params.coordinates.data].buffer
+                : new TextDecoder().decode(buffers[content.params.coordinates.data].buffer);
+          this.viewer_obj.loadTrajectory(content.params);
           break;
       }
     }

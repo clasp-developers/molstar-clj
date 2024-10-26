@@ -1,6 +1,6 @@
 {
   "name": "molstar-clj",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "A Mol* Widget for Common Lisp Jupyter",
   "keywords": [
     "molstar",
@@ -71,7 +71,7 @@
       }
     },
     "_build": {
-      "load": "static/remoteEntry.dc24df68dbda11a94b31.js",
+      "load": "static/remoteEntry.2e89fec91a852c874ec2.js",
       "extension": "./extension"
     }
   },

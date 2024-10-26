@@ -117,6 +117,11 @@ const DefaultViewerOptions = {
 
 type ViewerOptions = typeof DefaultViewerOptions;
 
+export interface PresetOptions {
+  name: keyof PresetTrajectoryHierarchy
+  params?: any
+};
+
 export class Viewer {
   constructor(public plugin: PluginUIContext) {
   }
@@ -256,10 +261,10 @@ export class Viewer {
     await this.plugin.builders.structure.hierarchy.applyPreset(trajectory, 'all-models', { useDefaultIfSingleModel: true, representationPresetParams: options?.representationParams });
   }
 
-  async loadStructureFromData(data: string | number[], format: BuiltInTrajectoryFormat, options?: { dataLabel?: string }) {
-    const _data = await this.plugin.builders.data.rawData({ data, label: options?.dataLabel });
+  async loadStructureFromData(data: string | number[], format: BuiltInTrajectoryFormat, options: { preset?: PresetOptions, label?: string } = {}) {
+    const _data = await this.plugin.builders.data.rawData({ data, label: options?.label });
     const trajectory = await this.plugin.builders.structure.parseTrajectory(_data, format);
-    await this.plugin.builders.structure.hierarchy.applyPreset(trajectory, 'default');
+    await this.plugin.builders.structure.hierarchy.applyPreset(trajectory, options.preset?.name ?? 'default', options.preset?.params);
   }
 
   loadPdb(pdb: string, options?: LoadStructureOptions) {
@@ -489,6 +494,8 @@ export class Viewer {
 
     const provider = plugin.dataFormats.get(params.coordinates.format);
     const coords = await provider!.parse(plugin, data);
+
+    console.log(coords);
 
     const trajectory = await plugin.build().toRoot()
       .apply(TrajectoryFromModelAndCoordinates, {

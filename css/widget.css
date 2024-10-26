@@ -6,6 +6,10 @@
   flex: 1 1 auto;
 }
 
+.msp-layout-expanded {
+  z-index: 50;
+}
+
 /*.jupyter-widgets.molstar-viewer > div {
   position: absolute !important;
   x: 0;
