@@ -15,14 +15,26 @@ import { MODULE_NAME, MODULE_VERSION } from './version';
 import '../css/widget.css';
 
 import * as molstar from './base-viewer';
-import { ViewSet } from './utils';
+import { ViewSet, resolve_buffer } from './utils';
 
 export class ViewerModel extends DOMWidgetModel {
   defaults() {
     return {
       ...super.defaults(),
 
+      layout$is_expanded: false,
       layout$show_controls: true,
+      layout$left_panel: 'full',
+      layout$right_panel: 'full',
+      layout$top_panel: 'full',
+      layout$bottom_panel: 'full',
+
+      viewport$show_expand: true,
+      viewport$show_controls: true,
+      viewport$show_settings: true,
+      viewport$show_selection_mode: true,
+      viewport$show_animation: true,
+      viewport$show_trajectory_controls: true,
 
       _model_name: 'ViewerModel',
       _model_module: MODULE_NAME,
@@ -71,15 +83,19 @@ export class ViewerView extends DOMWidgetView {
       this.el.appendChild(this.viewer_container);
 
       molstar.Viewer.create(this.viewer_container, {
-        layoutIsExpanded: false,
+        layoutIsExpanded: this.model.get('layout$is_expanded'),
         layoutShowControls: this.model.get('layout$show_controls'),
-        layoutShowRemoteState: false,
+        layoutLeftPanel: this.model.get('layout$left_panel'),
+        layoutRightPanel: this.model.get('layout$right_panel'),
+        layoutTopPanel: this.model.get('layout$top_panel'),
+        layoutBottomPanel: this.model.get('layout$bottom_panel'),
+        layoutShowRemoteState: true,
         layoutShowSequence: true,
         layoutShowLog: true,
         layoutShowLeftPanel: true,
 
-        viewportShowExpand: true,
-        viewportShowSelectionMode: false,
+        viewportShowExpand: this.model.get('viewport$show_expand'),
+        viewportShowSelectionMode: true,
         viewportShowAnimation: true,
         viewportShowTrajectoryControls: true,
 
@@ -89,11 +105,35 @@ export class ViewerView extends DOMWidgetView {
         this.viewer_obj = viewer;
         this.viewer_obj.plugin.layout.events.updated.subscribe(() => {
           this.model.set('layout$show_controls', this.viewer_obj.plugin.layout.state.showControls);
+          this.model.set('layout$is_expanded', this.viewer_obj.plugin.layout.state.isExpanded);
+          this.model.set('layout$left_panel', this.viewer_obj.plugin.layout.state.regionState.left);
+          this.model.set('layout$right_panel', this.viewer_obj.plugin.layout.state.regionState.right);
+          this.model.set('layout$top_panel', this.viewer_obj.plugin.layout.state.regionState.top);
+          this.model.set('layout$bottom_panel', this.viewer_obj.plugin.layout.state.regionState.bottom);
           this.model.save_changes();
         });
         this.model.on('change:layout$show_controls', () => {
           this.viewer_obj.setOptions({ layoutShowControls: this.model.get('layout$show_controls') });
         });
+        this.model.on('change:layout$is_expanded', () => {
+          this.viewer_obj.setOptions({ layoutIsExpanded: this.model.get('layout$is_expanded') });
+        });
+        this.model.on('change:layout$left_panel', () => {
+          this.viewer_obj.setOptions({ layoutLeftPanel: this.model.get('layout$left_panel') });
+        });
+        this.model.on('change:layout$right_panel', () => {
+          this.viewer_obj.setOptions({ layoutRightPanel: this.model.get('layout$right_panel') });
+        });
+        this.model.on('change:layout$top_panel', () => {
+          this.viewer_obj.setOptions({ layoutTopPanel: this.model.get('layout$top_panel') });
+        });
+        this.model.on('change:layout$bottom_panel', () => {
+          this.viewer_obj.setOptions({ layoutBottomPanel: this.model.get('layout$bottom_panel') });
+        });
+        this.model.on('change:viewport$show_expand', () => {
+          this.viewer_obj.setOptions({ viewportShowExpand: this.model.get('viewport$show_expand') });
+        });
+        console.log(this.viewer_obj);
       });
     });
   }
@@ -105,46 +145,41 @@ export class ViewerView extends DOMWidgetView {
     }
   }
 
-  handle_log_message(content: any): void {
-    switch (content.level) {
+  handle_log_message(msg: any): void {
+    switch (msg.level) {
       case 'info':
-        this.viewer_obj.plugin.log.info(content.text);
+        this.viewer_obj.plugin.log.info(msg.text);
         break;
       case 'warn':
-        this.viewer_obj.plugin.log.warn(content.text);
+        this.viewer_obj.plugin.log.warn(msg.text);
         break;
       case 'error':
-        this.viewer_obj.plugin.log.error(content.text);
+        this.viewer_obj.plugin.log.error(msg.text);
         break;
       default:
-        this.viewer_obj.plugin.log.message(content.text);
+        this.viewer_obj.plugin.log.message(msg.text);
         break;
     }
   }
 
-  handle_custom_message(content: any, buffers: DataView[]): void {
+  handle_custom_message(msg: any, buffers: DataView[]): void {
     if (this.viewer_obj) {
-      switch (content.do) {
+      switch (msg.name) {
         case 'log':
-          this.handle_log_message(content);
+          this.handle_log_message(msg);
           break;
         case 'load_pdb':
-          this.viewer_obj.loadPdb(content.pdb, content.options);
+          this.viewer_obj.loadPdb(msg.pdb, msg.options);
           break;
         case 'load_structure_from_data':
-          this.viewer_obj.loadStructureFromData(content.data, content.format, content.options);
+          this.viewer_obj.loadStructureFromData(resolve_buffer(msg.data, msg.isBinary, buffers),
+                                                msg.format, msg.options);
           break;
-        case 'load_trajectory':
-          if (Number.isInteger(content.params.model.data))
-            content.params.model.data = content.params.model.isBinary
-                ? buffers[content.params.model.data].buffer
-                : new TextDecoder().decode(buffers[content.params.model.data].buffer);
-          if (Number.isInteger(content.params.coordinates.data))
-            content.params.coordinates.data = content.params.coordinates.isBinary
-                ? buffers[content.params.coordinates.data].buffer
-                : new TextDecoder().decode(buffers[content.params.coordinates.data].buffer);
-          this.viewer_obj.loadTrajectory(content.params);
-          break;
+        /*case 'load_trajectory':
+          inject_buffer(content.params.model, 'data', content.params.model.isBinary, buffers);
+          inject_buffer(content.params.coordinates, 'data', content.params.coordinates.isBinary, buffers);
+          this.viewer_obj.loadTrajectory(
+          break;*/
       }
     }
   }

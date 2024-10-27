@@ -87,8 +87,10 @@ const DefaultViewerOptions = {
   layoutShowSequence: true,
   layoutShowLog: true,
   layoutShowLeftPanel: true,
-  collapseLeftPanel: false,
-  collapseRightPanel: false,
+  layoutLeftPanel: 'full',
+  layoutRightPanel: 'full',
+  layoutTopPanel: 'full',
+  layoutBottomPanel: 'full',
   disableAntialiasing: PluginConfig.General.DisableAntialiasing.defaultValue,
   pixelScale: PluginConfig.General.PixelScale.defaultValue,
   pickScale: PluginConfig.General.PickScale.defaultValue,
@@ -154,10 +156,10 @@ export class Viewer {
           showControls: o.layoutShowControls,
           controlsDisplay: o.layoutControlsDisplay,
           regionState: {
-            bottom: 'full',
-            left: o.collapseLeftPanel ? 'collapsed' : 'full',
-            right: o.collapseRightPanel ? 'hidden' : 'full',
-            top: 'full',
+            bottom: o.layoutBottomPanel as 'full' | 'hidden',
+            left: o.layoutLeftPanel as 'full' | 'hidden' | 'collapsed',
+            right: o.layoutRightPanel as 'full' | 'hidden',
+            top: o.layoutTopPanel as 'full' | 'hidden',
           }
         },
       },
@@ -221,7 +223,30 @@ export class Viewer {
     for (const property in options) {
       switch (property) {
         case 'layoutShowControls':
-          PluginCommands.Layout.Update(this.plugin, { state: { showControls: options[property] } });
+          PluginCommands.Layout.Update(this.plugin, { state: {
+            showControls: options[property]
+          } });
+          break;
+        case 'layoutLeftPanel':
+          PluginCommands.Layout.Update(this.plugin, { state: { regionState: {
+            ...this.plugin.layout.state.regionState,
+            left: options[property] as 'full' | 'hidden' | 'collapsed'
+          } } });
+          break;
+        case 'layoutRightPanel':
+          PluginCommands.Layout.Update(this.plugin, { state: { regionState: {
+            ...this.plugin.layout.state.regionState,
+            right: options[property] as 'full' | 'hidden' } } });
+          break;
+        case 'layoutTopPanel':
+          PluginCommands.Layout.Update(this.plugin, { state: { regionState: {
+            ...this.plugin.layout.state.regionState,
+            top: options[property] as 'full' | 'hidden' } } });
+          break;
+        case 'layoutBottomPanel':
+          PluginCommands.Layout.Update(this.plugin, { state: { regionState: {
+            ...this.plugin.layout.state.regionState,
+            bottom: options[property] as 'full' | 'hidden' } } });
           break;
       }
     }

@@ -3,6 +3,20 @@ import { camel, snake } from 'case';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 //const molstar = require('molstar');
 
+export function resolve_buffer(value: any, is_binary: boolean, buffers: DataView[]) {
+  return Number.isInteger(value)
+    ? (is_binary
+      ? buffers[value].buffer
+      : new TextDecoder().decode(buffers[value].buffer))
+    : value;
+}
+
+export function inject_buffer(object: any, key: string, is_binary: boolean, buffers: DataView[]) {
+  if (Number.isInteger(object[key]))
+      object[key] = is_binary
+          ? buffers[object[key]].buffer
+          : new TextDecoder().decode(buffers[object[key]].buffer);
+}
 
 export function serialize_model(model: any, object: any): any {
   var result: any = {};
